@@ -4,14 +4,14 @@
 using namespace glm;
 using namespace std;
 
-Cloth::Cloth(const int rx, const int rz, int w, int l) : res_x(rx), res_z(rz), width(w), length(l) {
-	float height = 20.0f;
+Cloth::Cloth(const int rx, const int rz, int w, int h) : res_x(rx), res_z(rz), width(w), height(h) {
+	float height = 15.0f;
 
 	float leap_x = (float)width / (float)res_x;
-	float offset_x = (float)width / 2.0f - (float)leap_x / 2.0f;  // center
+	float offset_x = ((float)width - (float)leap_x) / 2.0f;
 
-	float leap_z = (float)length / (float)res_z;
-	float offset_z = (float)length / 2.0f - (float)leap_z / 2.0f;  // center
+	float leap_z = (float)height / (float)res_z;
+	float offset_z = ((float)height - (float)leap_z) / 2.0f;  // center
 
 	restLengthX = leap_x;
 	restLengthZ = leap_z;
@@ -30,7 +30,7 @@ Cloth::Cloth(const int rx, const int rz, int w, int l) : res_x(rx), res_z(rz), w
 			prevPositions.push_back(vertices[vertices.size() - 1]);
 		}
 	}
-
+	// Indexed rendering
 	for (int i = 0; i < res_x - 1; i++) {
 		for (int j = 0; j < res_z - 1; j++) {
 			// Triangle 1
@@ -44,9 +44,9 @@ Cloth::Cloth(const int rx, const int rz, int w, int l) : res_x(rx), res_z(rz), w
 			indices.push_back((i)*res_x + (j + 1));
 		}
 	}
-	for (int i = 0; i < indices.size(); i++) cout << indices.at(i) << endl;
-	cout << indices.size() << endl;
-	cout << vertices.size() << endl;
+	// for (int i = 0; i < indices.size(); i++) cout << indices.at(i) << endl;
+	// cout << indices.size() << endl;
+	// cout << vertices.size() << endl;
 
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
@@ -54,56 +54,56 @@ Cloth::Cloth(const int rx, const int rz, int w, int l) : res_x(rx), res_z(rz), w
 	// Vertices(Particles for the cloth)
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float) * 3, &vertices[0], GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vec3), &vertices[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), 0);
 	glEnableVertexAttribArray(vPosition1);
 
 	// Normals
 	glGenBuffers(1, &NBO);
 	glBindBuffer(GL_ARRAY_BUFFER, NBO);
-	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(float) * 3, &normals[0], GL_STATIC_DRAW);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
+	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(vec3), &normals[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), 0);
 	glEnableVertexAttribArray(vPosition2);
 
 	// UV's for texture
 	glGenBuffers(1, &UVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, UVBO);
-	glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(float) * 2, &uvs[0], GL_STATIC_DRAW);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
+	glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(vec2), &uvs[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(vec2), 0);
 	glEnableVertexAttribArray(vPosition3);
 }
 
 
 Cloth::~Cloth() {}
 
-int Cloth::getDirection(int direction, int id) {
+int Cloth::getVertex(int direction, int vertex) {
 	if (directions.WEST == direction) {
-		return id - 1;
+		return vertex - 1;
 	}
 	else if (directions.NORTHWEST == direction) {
-		return id + res_x - 1;
+		return vertex + res_x - 1;
 	}
 	else if (directions.NORTH == direction) {
-		return id + res_x;
+		return vertex + res_x;
 	}
 	else if (directions.NORTHEAST == direction) {
-		return id + res_x + 1;
+		return vertex + res_x + 1;
 	}
 	else if (directions.EAST == direction) {
-		return id + 1;
+		return vertex + 1;
 	}
 	else if (directions.SOUTHEAST == direction) {
-		return id - res_x + 1;
+		return vertex - res_x + 1;
 	}
 	else if (directions.SOUTH == direction) {
-		return id - res_x;
+		return vertex - res_x;
 	}
 	else {
-		return id - res_x - 1;
+		return vertex - res_x - 1;
 	}
 }
 
-vec3 Cloth::getSpringForce(int direction, int id) {
+vec3 Cloth::getSpringForce(int direction, int vertex) {
 	float restLength = 0;
 
 	if (direction == directions.WEST || direction == directions.EAST)
@@ -115,11 +115,11 @@ vec3 Cloth::getSpringForce(int direction, int id) {
 	else
 		restLength = restLengthXZ;
 
-	vec3 delta = vertices[id] - vertices[getDirection(direction, id)];
-	float deltaLength = glm::length(delta);  // distance
-	float diff = (deltaLength - restLength) / deltaLength;
+	vec3 delta = vertices[vertex] - vertices[getVertex(direction, vertex)];
+	float currentLength = glm::length(delta);  // distance
+	float diff = (currentLength - restLength);
 
-	return delta * diff * springFactor;
+	return normalize(delta) * diff * springFactor;
 }
 
 
@@ -135,8 +135,7 @@ void Cloth::Forces(GLFWwindow* window) {
 		if (v % res_x != 0) {  // WEST
 			vec3 force = getSpringForce(directions.WEST, v);
 			spring += force;
-			spring_directions.push_back(
-			    normalize(vertices[v] - vertices[getDirection(directions.WEST, v)]));
+			spring_directions.push_back((vertices[v] - vertices[getVertex(directions.WEST, v)]));
 		}
 
 		if (v < vertices.size() - res_x) {  // NORTH
@@ -145,27 +144,25 @@ void Cloth::Forces(GLFWwindow* window) {
 				vec3 force = getSpringForce(directions.NORTHWEST, v);
 				spring += force;
 				spring_directions.push_back(
-				    normalize(vertices[v] - vertices[getDirection(directions.NORTHWEST, v)]));
+				    (vertices[v] - vertices[getVertex(directions.NORTHWEST, v)]));
 			}
 
 			vec3 force = getSpringForce(directions.NORTH, v);
 			spring += force;
-			spring_directions.push_back(
-			    normalize(vertices[v] - vertices[getDirection(directions.NORTH, v)]));
+			spring_directions.push_back((vertices[v] - vertices[getVertex(directions.NORTH, v)]));
 
 			if ((v + 1) % res_x != 0) {
 				vec3 force = getSpringForce(directions.NORTHEAST, v);
 				spring += force;
 				spring_directions.push_back(
-				    normalize(vertices[v] - vertices[getDirection(directions.NORTHEAST, v)]));
+				    (vertices[v] - vertices[getVertex(directions.NORTHEAST, v)]));
 			}
 		}
 
 		if ((v + 1) % res_x != 0) {  // EAST
 			vec3 force = getSpringForce(directions.EAST, v);
 			spring += force;
-			spring_directions.push_back(
-			    normalize(vertices[v] - vertices[getDirection(directions.EAST, v)]));
+			spring_directions.push_back((vertices[v] - vertices[getVertex(directions.EAST, v)]));
 		}
 
 		if (v > res_x - 1) {  // SOUTH
@@ -174,19 +171,18 @@ void Cloth::Forces(GLFWwindow* window) {
 				vec3 force = getSpringForce(directions.SOUTHEAST, v);
 				spring += force;
 				spring_directions.push_back(
-				    normalize(vertices[v] - vertices[getDirection(directions.SOUTHEAST, v)]));
+				    (vertices[v] - vertices[getVertex(directions.SOUTHEAST, v)]));
 			}
 
 			vec3 force = getSpringForce(directions.SOUTH, v);
 			spring += force;
-			spring_directions.push_back(
-			    normalize(vertices[v] - vertices[getDirection(directions.SOUTH, v)]));
+			spring_directions.push_back((vertices[v] - vertices[getVertex(directions.SOUTH, v)]));
 
 			if (v % res_x != 0) {
 				vec3 force = getSpringForce(directions.SOUTHWEST, v);
 				spring += force;
 				spring_directions.push_back(
-				    normalize(vertices[v] - vertices[getDirection(directions.SOUTHWEST, v)]));
+				    (vertices[v] - vertices[getVertex(directions.SOUTHWEST, v)]));
 			}
 		}
 
@@ -205,6 +201,7 @@ void Cloth::Forces(GLFWwindow* window) {
 
 		// Wind Resistance
 		vec3 F_airResistance = -airResistance * velocities[v] * abs(dot(normals[v], velocities[v]));
+		// vec3 F_airResistance = vec3(0);
 
 		// Controls
 		if (glfwGetKey(window, GLFW_KEY_SPACE)) {
@@ -267,15 +264,15 @@ void Cloth::verletIntegration(float delta, int n_iterations) {
 
 // Updating the simualtion every frame according to the forces
 void Cloth::update(GLFWwindow* window, float delta) {
-	Forces(window);
 	// verletIntegration(delta, 1);
+	Forces(window);
 	eulerIntegration(delta);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float) * 3, &vertices[0], GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vec3), &vertices[0], GL_DYNAMIC_DRAW);
 
 	glBindBuffer(GL_ARRAY_BUFFER, NBO);
-	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(float) * 3, &normals[0], GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(vec3), &normals[0], GL_DYNAMIC_DRAW);
 }
 
 

@@ -33,8 +33,8 @@ class Cloth {
 	void eulerIntegration(float delta);
 
 	Directions directions;
-	int getDirection(int direction, int id);
-	glm::vec3 getSpringForce(int direction, int id);
+	int getVertex(int direction, int vertex);
+	glm::vec3 getSpringForce(int direction, int vertex);
 
 	// Properties
 	std::vector<glm::vec3> forces;
@@ -57,6 +57,6 @@ class Cloth {
 	GLuint VAO, IBO, VBO, NBO, UVBO;
 	enum Attrib_IDs { vPosition1, vPosition2, vPosition3 };
 
-	int width, length;
+	int width, height;
 	const int res_x, res_z;
 };

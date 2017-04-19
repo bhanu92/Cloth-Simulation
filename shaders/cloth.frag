@@ -1,43 +1,22 @@
-#version 410 core
+#version 430 core
 
 
-in vec3 newPos;
-in vec3 newNormal;
-in vec2 texCoord;
+in vec3 Position;
+in vec3 Normal;
+in vec2 texUV;
 
-out vec4 outputF;
-uniform float camPos;
-uniform sampler2D carpetTexture;
+out vec4 outColor;
+uniform sampler2D texColor;
 
 
 void main()
 {
-	vec3 lightDir = normalize(vec3(-1, 0.2, 0.5));
-	vec3 normal = newNormal;
 
-	// Colors
-	vec3 ambient_color = vec3(0.0);
-	vec3 diffuse_color = vec3(texture(carpetTexture, texCoord));
-	vec3 specular_color = vec3(1.0);
-	ambient_color = diffuse_color;
+	vec3 ambient = vec3(0.1);
+	vec3 diffuse = vec3(texture(texColor, texUV));
+	vec3 specular = 0.1 * pow( (0.2, 0.3, 0.1), 30) * vec3(0.5);
 
-	// Diffuse
-	float a = clamp( dot( normal, lightDir ), 0.0, 1.0);
-    vec3 diffuse = 1.0 * a * diffuse_color;
-
-	// Ambient
-	float b = 0.1;
-	vec3 ambient = ambient_color * b;
-
-	// Specular
-	float ks = 0.1;
-	vec3 eye_pos = normalize(camPos - newPos);
-	vec3 R = 2.0*dot(lightDir,normal)*normal - lightDir;
-	vec3 specular = ks * pow( clamp(dot(R, eye_pos), 0.0, 1.0), 34.9) * specular_color;
-
-	vec3 color = diffuse + ambient + specular;
-
-
-	outputF = vec4(color, 1.0);
+	vec3 color = ambient + diffuse + specular;
+	outColor = vec4(color, 1.0);
 
  }

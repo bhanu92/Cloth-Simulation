@@ -215,7 +215,7 @@ void display(GLFWwindow* window, MouseRotator rotator, Cloth* cloth, Texture* ca
 	// time_Loc = glGetUniformLocation(program, "time");
 	MV_Loc = glGetUniformLocation(program, "MV");
 	P_Loc = glGetUniformLocation(program, "P");
-	camPos_Loc = glGetUniformLocation(program, "camPos");
+	// camPos_Loc = glGetUniformLocation(program, "camPos");
 	// lDir_Loc = glGetUniformLocation(program, "lDir");
 	// clear_color_Loc = glGetUniformLocation(program, "clear_color");
 	// window_dim_Loc = glGetUniformLocation(program, "window_dim");
@@ -240,7 +240,7 @@ void display(GLFWwindow* window, MouseRotator rotator, Cloth* cloth, Texture* ca
 	// glProgramUniform1f(program, time_Loc, currentTime);
 	glUniformMatrix4fv(MV_Loc, 1, GL_FALSE, &MV[0][0]);
 	glUniformMatrix4fv(P_Loc, 1, GL_FALSE, &P[0][0]);
-	glUniform3fv(camPos_Loc, 1, &camPos[0]);
+	// glUniform3fv(camPos_Loc, 1, &camPos[0]);
 	// glUniform3fv(lDir_Loc, 1, &lDir[0]);
 	// glUniform3fv(clear_color_Loc, 1, &clear_color[0]);
 	// glUniform2fv(window_dim_Loc, 1, &window_dim[0]);
