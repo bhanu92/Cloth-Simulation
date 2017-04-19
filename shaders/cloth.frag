@@ -6,9 +6,6 @@ in vec3 newNormal;
 in vec2 texCoord;
 
 out vec4 outputF;
-
-
-//uniform float time;
 uniform float camPos;
 uniform sampler2D carpetTexture;
 

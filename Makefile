@@ -3,7 +3,7 @@ PROG = simulation
 CC = g++
 CFLAGS = -g -w -D_DEBUG -std=c++11
 LIBS = -lglfw3 -lGL -lX11 -lXi -lXrandr -lXxf86vm -lXinerama -lXcursor -lrt -lm -pthread -ldl -lGLEW -lSOIL
-OBJS = Cloth.o Main.o Rotator.o LoadShaders.o Texture.o
+OBJS = cloth.o main.o rotator.o LoadShaders.o texture.o
 
 all: $(PROG)
 
