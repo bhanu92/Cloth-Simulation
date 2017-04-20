@@ -4,25 +4,25 @@
 using namespace glm;
 using namespace std;
 
-Cloth::Cloth(const int rx, const int rz, int w, int h) : res_x(rx), res_z(rz), width(w), height(h) {
+Cloth::Cloth(const int rx, const int rz, int w, int h) : xParticles(rx), zParticles(rz), width(w), height(h) {
 	float height = 15.0f;
 
-	float leap_x = (float)width / (float)res_x;
+	float leap_x = (float)width / (float)xParticles;
 	float offset_x = ((float)width - (float)leap_x) / 2.0f;
 
-	float leap_z = (float)height / (float)res_z;
+	float leap_z = (float)height / (float)zParticles;
 	float offset_z = ((float)height - (float)leap_z) / 2.0f;  // center
 
 	restLengthX = leap_x;
 	restLengthZ = leap_z;
 	restLengthXZ = sqrt(pow(leap_x, 2) + pow(leap_z, 2));
 
-	for (float z = 0; z < res_z; z += 1.0f) {
-		for (float x = 0; x < res_x; x += 1.0f) {
+	for (float z = 0; z < zParticles; z += 1.0f) {
+		for (float x = 0; x < xParticles; x += 1.0f) {
 			vertices.push_back(vec3(x * leap_x - offset_x, height, z * leap_z - offset_z));
 			initPositions.push_back(vec3(x * leap_x - offset_x, height, z * leap_z - offset_z));
 			normals.push_back(vec3(0, 1, 0));
-			uvs.push_back(vec2(x / res_x, z / res_z));
+			uvs.push_back(vec2(x / xParticles, z / zParticles));
 
 			// Properties
 			forces.push_back(vec3(0));
@@ -31,17 +31,17 @@ Cloth::Cloth(const int rx, const int rz, int w, int h) : res_x(rx), res_z(rz), w
 		}
 	}
 	// Indexed rendering
-	for (int i = 0; i < res_x - 1; i++) {
-		for (int j = 0; j < res_z - 1; j++) {
+	for (int i = 0; i < xParticles - 1; i++) {
+		for (int j = 0; j < zParticles - 1; j++) {
 			// Triangle 1
-			indices.push_back(i * res_x + j);
-			indices.push_back((i + 1) * res_x + j);
-			indices.push_back(i * res_x + (j + 1));
+			indices.push_back(i * xParticles + j);
+			indices.push_back((i + 1) * xParticles + j);
+			indices.push_back(i * xParticles + (j + 1));
 
 			// Triangle 2
-			indices.push_back((i + 1) * res_x + j);
-			indices.push_back((i + 1) * res_x + (j + 1));
-			indices.push_back((i)*res_x + (j + 1));
+			indices.push_back((i + 1) * xParticles + j);
+			indices.push_back((i + 1) * xParticles + (j + 1));
+			indices.push_back((i)*xParticles + (j + 1));
 		}
 	}
 	// for (int i = 0; i < indices.size(); i++) cout << indices.at(i) << endl;
@@ -81,25 +81,25 @@ int Cloth::getVertex(int direction, int vertex) {
 		return vertex - 1;
 	}
 	else if (directions.NORTHWEST == direction) {
-		return vertex + res_x - 1;
+		return vertex + xParticles - 1;
 	}
 	else if (directions.NORTH == direction) {
-		return vertex + res_x;
+		return vertex + xParticles;
 	}
 	else if (directions.NORTHEAST == direction) {
-		return vertex + res_x + 1;
+		return vertex + xParticles + 1;
 	}
 	else if (directions.EAST == direction) {
 		return vertex + 1;
 	}
 	else if (directions.SOUTHEAST == direction) {
-		return vertex - res_x + 1;
+		return vertex - xParticles + 1;
 	}
 	else if (directions.SOUTH == direction) {
-		return vertex - res_x;
+		return vertex - xParticles;
 	}
 	else {
-		return vertex - res_x - 1;
+		return vertex - xParticles - 1;
 	}
 }
 
@@ -132,15 +132,15 @@ void Cloth::Forces(GLFWwindow* window) {
 
 		std::vector<vec3> spring_directions;
 
-		if (v % res_x != 0) {  // WEST
+		if (v % xParticles != 0) {  // WEST
 			vec3 force = getSpringForce(directions.WEST, v);
 			spring += force;
 			spring_directions.push_back((vertices[v] - vertices[getVertex(directions.WEST, v)]));
 		}
 
-		if (v < vertices.size() - res_x) {  // NORTH
+		if (v < vertices.size() - xParticles) {  // NORTH
 
-			if (v % res_x != 0) {
+			if (v % xParticles != 0) {
 				vec3 force = getSpringForce(directions.NORTHWEST, v);
 				spring += force;
 				spring_directions.push_back(
@@ -151,7 +151,7 @@ void Cloth::Forces(GLFWwindow* window) {
 			spring += force;
 			spring_directions.push_back((vertices[v] - vertices[getVertex(directions.NORTH, v)]));
 
-			if ((v + 1) % res_x != 0) {
+			if ((v + 1) % xParticles != 0) {
 				vec3 force = getSpringForce(directions.NORTHEAST, v);
 				spring += force;
 				spring_directions.push_back(
@@ -159,15 +159,15 @@ void Cloth::Forces(GLFWwindow* window) {
 			}
 		}
 
-		if ((v + 1) % res_x != 0) {  // EAST
+		if ((v + 1) % xParticles != 0) {  // EAST
 			vec3 force = getSpringForce(directions.EAST, v);
 			spring += force;
 			spring_directions.push_back((vertices[v] - vertices[getVertex(directions.EAST, v)]));
 		}
 
-		if (v > res_x - 1) {  // SOUTH
+		if (v > xParticles - 1) {  // SOUTH
 
-			if ((v + 1) % res_x != 0) {
+			if ((v + 1) % xParticles != 0) {
 				vec3 force = getSpringForce(directions.SOUTHEAST, v);
 				spring += force;
 				spring_directions.push_back(
@@ -178,7 +178,7 @@ void Cloth::Forces(GLFWwindow* window) {
 			spring += force;
 			spring_directions.push_back((vertices[v] - vertices[getVertex(directions.SOUTH, v)]));
 
-			if (v % res_x != 0) {
+			if (v % xParticles != 0) {
 				vec3 force = getSpringForce(directions.SOUTHWEST, v);
 				spring += force;
 				spring_directions.push_back(
@@ -198,10 +198,7 @@ void Cloth::Forces(GLFWwindow* window) {
 		wind.y = cos(vertices[v].z * glfwGetTime());
 		wind.z = sin(cos(5 * vertices[v].x * vertices[v].y * vertices[v].z));
 
-
-		// Wind Resistance
-		vec3 F_airResistance = -airResistance * velocities[v] * abs(dot(normals[v], velocities[v]));
-		// vec3 F_airResistance = vec3(0);
+		vec3 forceAirResistance = vec3(0);
 
 		// Controls
 		if (glfwGetKey(window, GLFW_KEY_SPACE)) {
@@ -221,23 +218,13 @@ void Cloth::Forces(GLFWwindow* window) {
 			}
 		}
 
-		if (glfwGetKey(window, GLFW_KEY_G)) gravity *= -1.0f;
-
 		if (playSimulation) {
-			forces[v] = wind + F_airResistance + gravity - spring;
+			forces[v] = wind + forceAirResistance + gravity - spring;
 		}
 
 
-		// Pinned vertices
-		if (v > vertices.size() - res_x - 1) {
-			if (v % res_x == 0) {
-				forces[v] = vec3(0);
-			}
-
-			if ((v + 1) % res_x == 0) {
-				forces[v] = vec3(0);
-			}
-		}
+		forces[vertices.size() - xParticles] = vec3(0);
+		forces[vertices.size() - 1] = vec3(0);
 	}
 }
 

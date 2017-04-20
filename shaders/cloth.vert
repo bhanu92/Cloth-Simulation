@@ -11,12 +11,12 @@ out vec2 texUV;
 //uniform float time;
 
 uniform mat4 MV;
-uniform mat4 P;
+uniform mat4 MVP;
 
 void main(){
 
 	Position = vec3((MV * vec4(position, 1.0)).xyz);
 	Normal = normal;
 	texUV = uv;
-        gl_Position = P * MV * vec4(position, 1.0);
+        gl_Position = MVP * vec4(position, 1.0);
 }

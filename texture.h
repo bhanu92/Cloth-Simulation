@@ -8,19 +8,15 @@
 #include <SOIL/SOIL.h>
 
 
-class Texture
-{
-public:
-Texture(const char * path);
-Texture(const char * path, int w, int h);
-~Texture();
-void bindTexture();
+class Texture {
+      public:
+	Texture(const char* path);
+	Texture(const char* path, int w, int h);
+	~Texture();
+	void generateTexture(const char* path);
+	GLuint texture;
 
-protected:
-void generateTexture(const char * path);
-
-private:
-int width, height;
-unsigned char* image;
-GLuint texture;
+      private:
+	int width, height;
+	unsigned char* image;
 };

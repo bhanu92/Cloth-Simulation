@@ -6,17 +6,19 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+using namespace glm;
+using namespace std;
 
 class Directions {
       public:
-	const int WEST = 0;
-	const int NORTHWEST = 1;
-	const int NORTH = 2;
-	const int NORTHEAST = 3;
-	const int EAST = 4;
-	const int SOUTHEAST = 5;
-	const int SOUTH = 6;
-	const int SOUTHWEST = 7;
+	const int WEST = 1;
+	const int NORTHWEST = 2;
+	const int NORTH = 3;
+	const int NORTHEAST = 4;
+	const int EAST = 5;
+	const int SOUTHEAST = 6;
+	const int SOUTH = 7;
+	const int SOUTHWEST = 8;
 };
 
 class Cloth {
@@ -26,37 +28,31 @@ class Cloth {
 	~Cloth();
 	void draw(GLFWwindow* window);
 	void update(GLFWwindow* window, float delta);
+	vec3 gravity = vec3(0, -9.82f, 0);
 
       private:
-	void Forces(GLFWwindow* window);
-	void verletIntegration(float delta, int n_iterations);
-	void eulerIntegration(float delta);
-
-	Directions directions;
+	vector<vec3> initPositions;
+	vector<vec3> prevPositions;
+	vector<vec3> vertices;
+	vector<vec3> normals;
+	vector<vec2> uvs;
+	vector<vec3> forces;
+	vector<vec3> velocities;
+	vector<unsigned int> indices;
+	GLuint VAO, IBO, VBO, NBO, UVBO;
+	enum Attrib_IDs { vPosition1, vPosition2, vPosition3 };
 	int getVertex(int direction, int vertex);
-	glm::vec3 getSpringForce(int direction, int vertex);
-
-	// Properties
-	std::vector<glm::vec3> forces;
-	std::vector<glm::vec3> velocities;
-
-	std::vector<glm::vec3> initPositions;
-	std::vector<glm::vec3> prevPositions;
-
+	vec3 getSpringForce(int direction, int vertex);
+	int width, height;
+	const int xParticles, zParticles;
 	bool playSimulation = false;
 	float restLengthX, restLengthZ, restLengthXZ = 0;
 	float springFactor = 1500.f;
 	float dampingFactor = 0.996f;
 	float airResistance = .05f;
-	glm::vec3 gravity = glm::vec3(0, -9.82f, 0);
 
-	std::vector<glm::vec3> vertices;
-	std::vector<glm::vec3> normals;
-	std::vector<glm::vec2> uvs;
-	std::vector<unsigned int> indices;
-	GLuint VAO, IBO, VBO, NBO, UVBO;
-	enum Attrib_IDs { vPosition1, vPosition2, vPosition3 };
-
-	int width, height;
-	const int res_x, res_z;
+	Directions directions;
+	void Forces(GLFWwindow* window);
+	void verletIntegration(float delta, int n_iterations);
+	void eulerIntegration(float delta);
 };

@@ -194,7 +194,7 @@ void cbfun(GLFWwindow* window, int key, int scancode, int action, int mods) {
 }
 
 
-void display(GLFWwindow* window, MouseRotator rotator, Cloth* cloth, Texture* carpet) {
+void display(GLFWwindow* window, MouseRotator rotator, Cloth* cloth, Texture* tex) {
 	vec3 clear_color = vec3(0.3, 0.45, 0.6);
 	glClearColor(clear_color.x, clear_color.y, clear_color.z, 1.0f);
 	glEnable(GL_DEPTH_TEST);
@@ -212,44 +212,29 @@ void display(GLFWwindow* window, MouseRotator rotator, Cloth* cloth, Texture* ca
 	glUseProgram(program);
 	// Uniforms
 	GLint MV_Loc, P_Loc, lDir_Loc, camPos_Loc, clear_color_Loc, time_Loc, window_dim_Loc = -1;
-	// time_Loc = glGetUniformLocation(program, "time");
 	MV_Loc = glGetUniformLocation(program, "MV");
-	P_Loc = glGetUniformLocation(program, "P");
-	// camPos_Loc = glGetUniformLocation(program, "camPos");
-	// lDir_Loc = glGetUniformLocation(program, "lDir");
-	// clear_color_Loc = glGetUniformLocation(program, "clear_color");
-	// window_dim_Loc = glGetUniformLocation(program, "window_dim");
+	P_Loc = glGetUniformLocation(program, "MVP");
 
-	vec2 window_dim = vec2(WIDTH, HEIGHT);
 
-	mat4 MV, P;
+	mat4 mvMatrix, MVP, projectionMatrix;
 	mat4 M = mat4(1.0f);
 	mat4 VRotX = rotate(M, (rotator.phi), vec3(0.0f, -1.0f, 0.0f));  // Rotation about y-axis
 	mat4 VRotY = rotate(M, (rotator.theta + 0.2f), vec3(-1.0f, 0.0f, 0.0f));  // Rotation about x-axis
 	vec4 camPos = VRotX * VRotY * vec4(0.0f, 20.0f, 200.0f + 0.2f * rotator.zoom, 1.0f);
-
-	// cout << "Campos" << to_string(vec3(camPos));
-	// vec3 scene_center(0.0f, 10.0f, 0.0f);
 	viewMatrix = lookAt(vec3(camPos), scene_center, viewUP);
-	P = perspective(50.0f, float(WIDTH / HEIGHT), 0.1f, 4000.0f);
-	MV = viewMatrix * M;
+	projectionMatrix = perspective(50.0f, float(WIDTH / HEIGHT), 0.1f, 4000.0f);
+	mvMatrix = viewMatrix * M;
+	MVP = projectionMatrix * mvMatrix;
 
-	// vec3 lDir = vec3(1.0f, 0.0f, 0.0f);
+	glUniformMatrix4fv(MV_Loc, 1, GL_FALSE, &mvMatrix[0][0]);
+	glUniformMatrix4fv(P_Loc, 1, GL_FALSE, &MVP[0][0]);
 
-	// Send uniform variables
-	// glProgramUniform1f(program, time_Loc, currentTime);
-	glUniformMatrix4fv(MV_Loc, 1, GL_FALSE, &MV[0][0]);
-	glUniformMatrix4fv(P_Loc, 1, GL_FALSE, &P[0][0]);
-	// glUniform3fv(camPos_Loc, 1, &camPos[0]);
-	// glUniform3fv(lDir_Loc, 1, &lDir[0]);
-	// glUniform3fv(clear_color_Loc, 1, &clear_color[0]);
-	// glUniform2fv(window_dim_Loc, 1, &window_dim[0]);
-
-	texLoc = glGetUniformLocation(program, "carpetTexture");
+	texLoc = glGetUniformLocation(program, "texColor");
 	glUniform1i(texLoc, 0);
-	glActiveTexture(GL_TEXTURE0);
-	carpet->bindTexture();
+
+	glBindTexture(GL_TEXTURE_2D, tex->texture);
 	if (!glfwGetKey(window, GLFW_KEY_P)) cloth->update(window, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_G)) cloth->gravity *= -1.0f;
 	cloth->draw(window);
 }
 
@@ -290,7 +275,7 @@ int main() {
 
 	// Create cloth
 	Cloth* cloth = new Cloth(35, 35, 15, 15);
-	Texture* carpet = new Texture("cat.jpg");
+	Texture* tex = new Texture("cat.jpg", 15, 15);
 
 	ShaderInfo shaders[] = {
 	    {GL_VERTEX_SHADER, "shaders/cloth.vert"}, {GL_FRAGMENT_SHADER, "shaders/cloth.frag"}, {GL_NONE, NULL}};
@@ -305,7 +290,7 @@ int main() {
 
 	while (!glfwWindowShouldClose(window)) {
 		rotator.poll(window);
-		display(window, rotator, cloth, carpet);
+		display(window, rotator, cloth, tex);
 		glfwSwapInterval(0);
 		glfwSwapBuffers(window);
 		glfwPollEvents();
