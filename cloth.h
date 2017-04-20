@@ -24,7 +24,7 @@ class Directions {
 class Cloth {
       public:
 	Cloth();
-	Cloth(const int rx, const int rz, const int w, const int l);
+	Cloth(const int x, const int z, const int w, const int l);
 	~Cloth();
 	void draw(GLFWwindow* window);
 	void update(GLFWwindow* window, float delta);
@@ -43,6 +43,7 @@ class Cloth {
 	enum Attrib_IDs { vPosition1, vPosition2, vPosition3 };
 	int getVertex(int direction, int vertex);
 	vec3 getSpringForce(int direction, int vertex);
+	void springs(int v, vec3& spring, vector<vec3>& springDirections);
 	int width, height;
 	const int xParticles, zParticles;
 	bool playSimulation = false;

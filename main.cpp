@@ -12,7 +12,7 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/string_cast.hpp>
 
-#include "rotator.h"
+#include "camera.h"
 #include "texture.h"
 #include "cloth.h"
 #include "LoadShaders.h"
@@ -211,7 +211,7 @@ void display(GLFWwindow* window, MouseRotator rotator, Cloth* cloth, Texture* te
 
 	glUseProgram(program);
 	// Uniforms
-	GLint MV_Loc, P_Loc, lDir_Loc, camPos_Loc, clear_color_Loc, time_Loc, window_dim_Loc = -1;
+	GLint MV_Loc, P_Loc;
 	MV_Loc = glGetUniformLocation(program, "MV");
 	P_Loc = glGetUniformLocation(program, "MVP");
 
@@ -231,8 +231,8 @@ void display(GLFWwindow* window, MouseRotator rotator, Cloth* cloth, Texture* te
 
 	texLoc = glGetUniformLocation(program, "texColor");
 	glUniform1i(texLoc, 0);
-
 	glBindTexture(GL_TEXTURE_2D, tex->texture);
+
 	if (!glfwGetKey(window, GLFW_KEY_P)) cloth->update(window, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_G)) cloth->gravity *= -1.0f;
 	cloth->draw(window);
@@ -246,18 +246,14 @@ int main() {
 	}
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Cloth Simulation", NULL, NULL);
 
-	// glfwSetWindowPos(window, 250, 400);
-
-	// Define the viewport dimensions
-
 	glfwMakeContextCurrent(window);  // Initialize GLEW
-	glewExperimental = true;  // Needed in core profile
+	glewExperimental = true;
 	if (glewInit() != GLEW_OK) {
 		cerr << "GLEW initialization failure" << endl;
 		exit(EXIT_FAILURE);
@@ -277,8 +273,7 @@ int main() {
 	Cloth* cloth = new Cloth(35, 35, 15, 15);
 	Texture* tex = new Texture("cat.jpg", 15, 15);
 
-	ShaderInfo shaders[] = {
-	    {GL_VERTEX_SHADER, "shaders/cloth.vert"}, {GL_FRAGMENT_SHADER, "shaders/cloth.frag"}, {GL_NONE, NULL}};
+	ShaderInfo shaders[] = {{GL_VERTEX_SHADER, "cloth.vert"}, {GL_FRAGMENT_SHADER, "cloth.frag"}, {GL_NONE, NULL}};
 
 	program = LoadShaders(shaders);
 	if (program == NULL) {

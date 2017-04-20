@@ -4,27 +4,20 @@
 using namespace glm;
 using namespace std;
 
-Cloth::Cloth(const int rx, const int rz, int w, int h) : xParticles(rx), zParticles(rz), width(w), height(h) {
+Cloth::Cloth(const int x, const int z, int w, int h) : xParticles(x), zParticles(z), width(w), height(h) {
 	float height = 15.0f;
 
-	float leap_x = (float)width / (float)xParticles;
-	float offset_x = ((float)width - (float)leap_x) / 2.0f;
-
-	float leap_z = (float)height / (float)zParticles;
-	float offset_z = ((float)height - (float)leap_z) / 2.0f;  // center
-
-	restLengthX = leap_x;
-	restLengthZ = leap_z;
-	restLengthXZ = sqrt(pow(leap_x, 2) + pow(leap_z, 2));
+	float distX = (float)width / (float)xParticles;
+	float distZ = (float)height / (float)zParticles;
+	float centerX = ((float)width - (float)distX) / 2.0f;
+	float centerZ = ((float)height - (float)distZ) / 2.0f;
 
 	for (float z = 0; z < zParticles; z += 1.0f) {
 		for (float x = 0; x < xParticles; x += 1.0f) {
-			vertices.push_back(vec3(x * leap_x - offset_x, height, z * leap_z - offset_z));
-			initPositions.push_back(vec3(x * leap_x - offset_x, height, z * leap_z - offset_z));
+			vertices.push_back(vec3(x * distX - centerX, height, z * distZ - centerZ));
+			initPositions.push_back(vec3(x * distX - centerX, height, z * distZ - centerZ));
 			normals.push_back(vec3(0, 1, 0));
 			uvs.push_back(vec2(x / xParticles, z / zParticles));
-
-			// Properties
 			forces.push_back(vec3(0));
 			velocities.push_back(vec3(0));
 			prevPositions.push_back(vertices[vertices.size() - 1]);
@@ -71,10 +64,16 @@ Cloth::Cloth(const int rx, const int rz, int w, int h) : xParticles(rx), zPartic
 	glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(vec2), &uvs[0], GL_STATIC_DRAW);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(vec2), 0);
 	glEnableVertexAttribArray(vPosition3);
+
+
+	restLengthX = distX;
+	restLengthZ = distZ;
+	restLengthXZ = sqrt(pow(distX, 2) + pow(distZ, 2));
 }
 
 
 Cloth::~Cloth() {}
+
 
 int Cloth::getVertex(int direction, int vertex) {
 	if (directions.WEST == direction) {
@@ -122,6 +121,57 @@ vec3 Cloth::getSpringForce(int direction, int vertex) {
 	return normalize(delta) * diff * springFactor;
 }
 
+void Cloth::springs(int v, vec3& spring, vector<vec3>& springDirections) {
+	if (v % xParticles != 0) {  // WEST
+		vec3 force = getSpringForce(directions.WEST, v);
+		spring += force;
+		springDirections.push_back((vertices[v] - vertices[getVertex(directions.WEST, v)]));
+	}
+
+	if (v < vertices.size() - xParticles) {  // NORTH
+
+		if (v % xParticles != 0) {
+			vec3 force = getSpringForce(directions.NORTHWEST, v);
+			spring += force;
+			springDirections.push_back((vertices[v] - vertices[getVertex(directions.NORTHWEST, v)]));
+		}
+
+		vec3 force = getSpringForce(directions.NORTH, v);
+		spring += force;
+		springDirections.push_back((vertices[v] - vertices[getVertex(directions.NORTH, v)]));
+
+		if ((v + 1) % xParticles != 0) {
+			vec3 force = getSpringForce(directions.NORTHEAST, v);
+			spring += force;
+			springDirections.push_back((vertices[v] - vertices[getVertex(directions.NORTHEAST, v)]));
+		}
+	}
+
+	if ((v + 1) % xParticles != 0) {  // EAST
+		vec3 force = getSpringForce(directions.EAST, v);
+		spring += force;
+		springDirections.push_back((vertices[v] - vertices[getVertex(directions.EAST, v)]));
+	}
+
+	if (v > xParticles - 1) {  // SOUTH
+
+		if ((v + 1) % xParticles != 0) {
+			vec3 force = getSpringForce(directions.SOUTHEAST, v);
+			spring += force;
+			springDirections.push_back((vertices[v] - vertices[getVertex(directions.SOUTHEAST, v)]));
+		}
+
+		vec3 force = getSpringForce(directions.SOUTH, v);
+		spring += force;
+		springDirections.push_back((vertices[v] - vertices[getVertex(directions.SOUTH, v)]));
+
+		if (v % xParticles != 0) {
+			vec3 force = getSpringForce(directions.SOUTHWEST, v);
+			spring += force;
+			springDirections.push_back((vertices[v] - vertices[getVertex(directions.SOUTHWEST, v)]));
+		}
+	}
+}
 
 // Force equation from https://graphics.stanford.edu/~mdfisher/cloth.html#EquationsOfMotion
 // F(v) = Mg + Fwind + Fairresistance - k*sum(x_current - x_rest)
@@ -130,66 +180,13 @@ void Cloth::Forces(GLFWwindow* window) {
 		vec3 wind = vec3(0, 0, 0);
 		vec3 spring = vec3(0, 0, 0);
 
-		std::vector<vec3> spring_directions;
-
-		if (v % xParticles != 0) {  // WEST
-			vec3 force = getSpringForce(directions.WEST, v);
-			spring += force;
-			spring_directions.push_back((vertices[v] - vertices[getVertex(directions.WEST, v)]));
-		}
-
-		if (v < vertices.size() - xParticles) {  // NORTH
-
-			if (v % xParticles != 0) {
-				vec3 force = getSpringForce(directions.NORTHWEST, v);
-				spring += force;
-				spring_directions.push_back(
-				    (vertices[v] - vertices[getVertex(directions.NORTHWEST, v)]));
-			}
-
-			vec3 force = getSpringForce(directions.NORTH, v);
-			spring += force;
-			spring_directions.push_back((vertices[v] - vertices[getVertex(directions.NORTH, v)]));
-
-			if ((v + 1) % xParticles != 0) {
-				vec3 force = getSpringForce(directions.NORTHEAST, v);
-				spring += force;
-				spring_directions.push_back(
-				    (vertices[v] - vertices[getVertex(directions.NORTHEAST, v)]));
-			}
-		}
-
-		if ((v + 1) % xParticles != 0) {  // EAST
-			vec3 force = getSpringForce(directions.EAST, v);
-			spring += force;
-			spring_directions.push_back((vertices[v] - vertices[getVertex(directions.EAST, v)]));
-		}
-
-		if (v > xParticles - 1) {  // SOUTH
-
-			if ((v + 1) % xParticles != 0) {
-				vec3 force = getSpringForce(directions.SOUTHEAST, v);
-				spring += force;
-				spring_directions.push_back(
-				    (vertices[v] - vertices[getVertex(directions.SOUTHEAST, v)]));
-			}
-
-			vec3 force = getSpringForce(directions.SOUTH, v);
-			spring += force;
-			spring_directions.push_back((vertices[v] - vertices[getVertex(directions.SOUTH, v)]));
-
-			if (v % xParticles != 0) {
-				vec3 force = getSpringForce(directions.SOUTHWEST, v);
-				spring += force;
-				spring_directions.push_back(
-				    (vertices[v] - vertices[getVertex(directions.SOUTHWEST, v)]));
-			}
-		}
+		vector<vec3> springDirections;
+		springs(v, spring, springDirections);
 
 		// Calculate normals
 		vec3 normal = vec3(0);
-		for (int i = 1; i < spring_directions.size(); i++) {
-			normal += cross(spring_directions[i], spring_directions[i - 1]);
+		for (int i = 1; i < springDirections.size(); i++) {
+			normal += cross(springDirections[i], springDirections[i - 1]);
 		}
 		normals[v] = normalize(normal);
 

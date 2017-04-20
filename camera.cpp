@@ -1,4 +1,4 @@
-#include "rotator.h"
+#include "camera.h"
 
 void KeyTranslator::init(GLFWwindow* window) {
 	horizontal = 0.0;

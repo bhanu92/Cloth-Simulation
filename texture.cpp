@@ -5,18 +5,7 @@
 using namespace std;
 
 
-Texture::Texture(const char* path) : width(100), height(100) {
-	generateTexture(path);
-}
-
 Texture::Texture(const char* path, int w, int h) : width(w), height(h) {
-	generateTexture(path);
-}
-
-Texture::~Texture() {}
-
-void Texture::generateTexture(const char* path) {
-	// Load texture
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glActiveTexture(GL_TEXTURE0);
@@ -56,3 +45,5 @@ void Texture::generateTexture(const char* path) {
 
 	SOIL_free_image_data(image);
 }
+
+Texture::~Texture() {}
